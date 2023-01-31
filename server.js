@@ -5,6 +5,7 @@ const morgan = require('morgan');
 
 // routes
 const authRoute = require('./routes/userRoute');
+const { notFound, errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 dotenv.config();
@@ -15,6 +16,10 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/users', authRoute);
+
+// error handlers
+app.use(notFound);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
