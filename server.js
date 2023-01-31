@@ -3,12 +3,18 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/connectDB');
 const morgan = require('morgan');
 
+// routes
+const authRoute = require('./routes/userRoute');
+
 const app = express();
 dotenv.config();
 
 // Middleware
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Routes
+app.use('/api/users', authRoute);
 
 const PORT = process.env.PORT || 5001;
 
