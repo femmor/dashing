@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const generateToken = require('../config/jwtToken');
+const validateDbId = require('../utils/validateDbId');
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -64,6 +65,7 @@ const getUsers = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const getUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validateDbId(id);
   const user = await User.findById(id).select('-password');
 
   if (user) {
@@ -79,6 +81,8 @@ const getUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const updateUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
+  validateDbId(_id);
+
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
@@ -105,6 +109,7 @@ const updateUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validateDbId(id);
 
   const user = await User.findByIdAndDelete(id);
 
@@ -121,6 +126,7 @@ const deleteUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validateDbId(id);
 
   try {
     await User.findByIdAndUpdate(
@@ -144,6 +150,7 @@ const blockUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validateDbId(id);
 
   try {
     await User.findByIdAndUpdate(
