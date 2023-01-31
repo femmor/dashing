@@ -39,7 +39,19 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await User.find({}).select('-password');
+
+  if (users) {
+    res.status(200).json(users);
+  } else {
+    res.status(404);
+    throw new Error('No users found');
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
+  getUsers,
 };
