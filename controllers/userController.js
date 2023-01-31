@@ -95,7 +95,8 @@ const updateUser = asyncHandler(async (req, res) => {
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    res.status(500).json(error.message);
+    res.status(400);
+    throw new Error(error.message);
   }
 });
 
@@ -115,6 +116,52 @@ const deleteUser = asyncHandler(async (req, res) => {
   res.status(200).json({ message: 'User deleted successfully' });
 });
 
+// @desc    Put block user
+// @route   PUT /api/users/block-user/:id
+// @access  Private/Admin
+const blockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await User.findByIdAndUpdate(
+      id,
+      {
+        isBlocked: true,
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(200).json('User blocked successfully');
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
+// @desc    Put unblock user
+// @route   PUT /api/users/unblock-user/:id
+// @access  Private/Admin
+const unblockUser = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await User.findByIdAndUpdate(
+      id,
+      {
+        isBlocked: false,
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(200).json('User unblocked successfully');
+  } catch (error) {
+    res.status(400);
+    throw new Error(error.message);
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -122,4 +169,6 @@ module.exports = {
   getUser,
   deleteUser,
   updateUser,
+  blockUser,
+  unblockUser,
 };
