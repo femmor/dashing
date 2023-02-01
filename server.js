@@ -2,10 +2,11 @@ const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/connectDB');
 const morgan = require('morgan');
+const { notFound, errorHandler } = require('./middlewares/errorHandler');
+const cookieParser = require('cookie-parser');
 
 // routes
 const authRoute = require('./routes/userRoute');
-const { notFound, errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 dotenv.config();
@@ -13,6 +14,7 @@ dotenv.config();
 // Middleware
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(cookieParser());
 
 // Routes
 app.use('/api/users', authRoute);

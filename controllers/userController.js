@@ -1,7 +1,9 @@
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const generateToken = require('../config/jwtToken');
+const generateRefreshToken = require('../config/refreshToken');
 const validateDbId = require('../utils/validateDbId');
+const jwt = require('jsonwebtoken');
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -32,6 +34,21 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (user && (await user.isPasswordMatched(password))) {
+    const refreshToken = await generateRefreshToken(user._id);
+    const updateUserData = await User.findByIdAndUpdate(
+      user._id,
+      {
+        refreshToken,
+      },
+      {
+        new: true,
+      }
+    );
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       _id: user._id,
       firstName: user.firstName,
@@ -169,6 +186,63 @@ const unblockUser = asyncHandler(async (req, res) => {
   }
 });
 
+const handleRefreshToken = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+
+  if (!cookie.refreshToken) {
+    res.status(401);
+    throw new Error('No refresh token found in cookies');
+  }
+
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
+
+  if (!user) {
+    res.status(401);
+    throw new Error('Invalid refresh token');
+  }
+
+  jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+    if (err || user.id !== decoded.id) {
+      res.status(403);
+      throw new Error('Invalid refresh token');
+    }
+
+    const accessToken = generateToken(user._id);
+    res.status(200).json({ accessToken });
+  });
+});
+
+// @desc    Logout user
+// @route   GET /api/users/logout
+// @access  Private
+const logoutUser = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+
+  if (!cookie.refreshToken) {
+    res.status(401);
+    throw new Error('No refresh token found in cookies');
+  }
+  const refreshToken = cookie.refreshToken;
+  const user = await User.findOne({ refreshToken });
+
+  if (!user) {
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+    });
+    res.sendStatus(204); // Forbidden
+  }
+  await User.findOneAndUpdate(refreshToken, {
+    refreshToken: '',
+  });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+  });
+  res.sendStatus(204); // No content
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -178,4 +252,6 @@ module.exports = {
   updateUser,
   blockUser,
   unblockUser,
+  handleRefreshToken,
+  logoutUser,
 };
