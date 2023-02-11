@@ -19,6 +19,26 @@ const create = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Update a blog
+// @route   PUT /api/blogs/:id
+// @access  Private
+const update = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updatedBlog = await Blog.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+    res
+      .status(200)
+      .json({ message: 'Blog updated successfully!', updatedBlog });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json(error.message);
+  }
+});
+
 module.exports = {
   create,
+  update,
 };
