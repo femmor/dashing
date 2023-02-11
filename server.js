@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 // routes
 const authRoute = require('./routes/userRoute');
 const productRoutes = require('./routes/productRoute');
+const blogRoutes = require('./routes/blogRoute');
 
 const app = express();
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(cookieParser());
 // Routes
 app.use('/api/users', authRoute);
 app.use('/api/products', productRoutes);
+app.use('/api/blogs', blogRoutes);
 
 // error handlers
 app.use(notFound);
