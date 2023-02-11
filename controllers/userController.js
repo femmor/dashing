@@ -243,6 +243,28 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.sendStatus(204); // No content
 });
 
+// @desc    Update password
+// @route   PUT /api/users/update-password
+// @access  Private
+const updatePassword = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateDbId(_id);
+
+  const { password } = req.body;
+  const user = await User.findById(_id);
+
+  if (password) {
+    user.password = password;
+    const updatedPassword = await user.save();
+    res
+      .status(200)
+      .json({ message: 'Password updated successfully', updatedPassword });
+  } else {
+    res.status(401);
+    throw new Error('Invalid password');
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -254,4 +276,5 @@ module.exports = {
   unblockUser,
   handleRefreshToken,
   logoutUser,
+  updatePassword,
 };
