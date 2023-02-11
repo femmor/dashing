@@ -4,6 +4,8 @@ const generateToken = require('../config/jwtToken');
 const generateRefreshToken = require('../config/refreshToken');
 const validateDbId = require('../utils/validateDbId');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const sendEmail = require('../controllers/emailController');
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -265,6 +267,80 @@ const updatePassword = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Generate forgot password token
+// @route   POST /api/users/forgot-password
+// @access  Public
+const forgotPasswordToken = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User with this email not found');
+  }
+
+  try {
+    const token = await user.createPasswordResetToken();
+    await user.save();
+
+    const resetUrl = `Please follow this link to reset your password. This link is valid for 10 minutes only. <a href="http://localhost:5001/api/users/reset-password/${token}">Reset Password</a>`;
+
+    const data = {
+      to: email,
+      text: 'Hi there',
+      subject: 'Reset Password',
+      html: resetUrl,
+    };
+
+    await sendEmail(data);
+    res.status(200).json({ message: 'Email sent successfully', token });
+  } catch (error) {
+    res.status(500);
+    throw new Error(error.message);
+  }
+});
+
+// @desc    Reset password
+// @route   PUT /api/users/reset-password/:token
+// @access  Public
+const resetPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  const { token } = req.params;
+
+  // Hash the token
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Find user with the hashed token
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  // Check if user exists and token is valid
+  if (!user) {
+    res.status(404);
+    throw new Error('Invalid token, please request a new one');
+  }
+
+  // Check if token is expired
+  const isTokenExpired = user.passwordResetExpires < Date.now();
+
+  if (isTokenExpired) {
+    res.status(401);
+    throw new Error('Token expired, please request a new one');
+  }
+
+  // Update password
+  user.password = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+
+  await user.save();
+
+  res.status(200).json({ message: 'Password updated successfully', user });
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -277,4 +353,6 @@ module.exports = {
   handleRefreshToken,
   logoutUser,
   updatePassword,
+  forgotPasswordToken,
+  resetPassword,
 };

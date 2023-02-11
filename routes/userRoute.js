@@ -11,6 +11,8 @@ const {
   handleRefreshToken,
   logoutUser,
   updatePassword,
+  forgotPasswordToken,
+  resetPassword,
 } = require('../controllers/userController');
 const { authMiddleware, isAdmin } = require('../middlewares/authMiddleware');
 
@@ -18,6 +20,8 @@ const router = express.Router();
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/forgot-password-token', forgotPasswordToken);
+router.put('/reset-password/:token', resetPassword);
 router.get('/refresh', handleRefreshToken);
 router.get('/logout', logoutUser);
 
